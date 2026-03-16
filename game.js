@@ -120,13 +120,6 @@ const sprites = {
   flap:  buildSprite(SPRITE_FLAP),
 };
 
-// NPC walk sprite sheet (128×32, 4 frames of 32×32)
-const npcWalkSheet = new Image();
-npcWalkSheet.src = 'npc_walk.png';
-const NPC_SHEET_FRAME_W = 32;
-const NPC_SHEET_FRAME_H = 32;
-const NPC_DRAW_SIZE = 16; // drawn at 16×16 logical px
-
 // ============================================================
 // SEA BACKGROUND
 // ============================================================
@@ -520,36 +513,91 @@ function drawPerson(p) {
     ctx.fillRect(rx + 6, ry + 2, 2, 2);
   }
 
-  // Body — NPC walk sprite sheet
-  const isMoving = (p.walkSpeed || p.panicking) && !p.sitting;
-  const animSpeed = p.panicking ? 0.3 : 0.15 * Math.abs(p.walkSpeed || 0) * 10;
-  const frameIdx = isMoving ? Math.floor(frame * Math.max(0.08, animSpeed) / 1.2) % 4 : 0;
-
+  // Body (top-down oval) — rotated to face walk/panic direction
   let facing;
   if (p.panicking) {
-    facing = Math.PI;
+    facing = Math.PI;  // face upward (toward sea)
   } else if (p.walkSpeed > 0) {
     facing = -Math.PI / 2;
   } else if (p.walkSpeed < 0) {
     facing = Math.PI / 2;
   } else {
-    facing = 0;
+    facing = 0;  // standing faces "down"
   }
 
-  if (npcWalkSheet.complete && npcWalkSheet.naturalWidth > 0) {
-    ctx.save();
-    ctx.translate(Math.round(p.x), Math.round(p.y));
-    ctx.rotate(facing);
-    const half = NPC_DRAW_SIZE / 2;
-    ctx.drawImage(
-      npcWalkSheet,
-      frameIdx * NPC_SHEET_FRAME_W, 0,
-      NPC_SHEET_FRAME_W, NPC_SHEET_FRAME_H,
-      -half, -half,
-      NPC_DRAW_SIZE, NPC_DRAW_SIZE
-    );
-    ctx.restore();
+  ctx.save();
+  ctx.translate(Math.round(p.x), Math.round(p.y));
+  ctx.rotate(facing);
+
+  // Walk cycle
+  const isMoving = (p.walkSpeed || p.panicking) && !p.sitting;
+  const animSpeed = p.panicking ? 0.3 : 0.15 * Math.abs(p.walkSpeed) * 10;
+  const stride = isMoving ? Math.round(Math.sin(frame * animSpeed) * 2) : 0;
+
+  const throwing = p.throwTimer > 0;
+
+  if (p.sitting) {
+    // Sitting: legs out in front, body, head on top
+    // Legs (two stumps below body)
+    ctx.fillStyle = p.skin;
+    ctx.fillRect(-2, 4, 2, 2);
+    ctx.fillRect(1, 4, 2, 2);
+
+    // Torso (round from above — shoulders visible)
+    ctx.fillStyle = p.shirt;
+    ctx.fillRect(-3, -2, 7, 5);
+    ctx.fillRect(-4, -1, 9, 3);
+
+    // Head (circle on top)
+    ctx.fillStyle = p.skin;
+    ctx.fillRect(-2, -5, 5, 4);
+    // Hair
+    ctx.fillStyle = p.hairColour;
+    ctx.fillRect(-2, -6, 5, 2);
+  } else {
+    // Bird's-eye standing/walking person
+    // Legs (alternating stride sideways from body)
+    ctx.fillStyle = '#2a2a5a';
+    ctx.fillRect(-2 + stride, 4, 2, 3);
+    ctx.fillRect(1 - stride, 4, 2, 3);
+
+    // Shoes
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(-2 + stride, 6, 2, 1);
+    ctx.fillRect(1 - stride, 6, 2, 1);
+
+    // Torso / shoulders (wider rectangle from above)
+    ctx.fillStyle = p.shirt;
+    ctx.fillRect(-4, -2, 9, 5);
+    ctx.fillRect(-3, -3, 7, 7);
+
+    // Arms (swing opposite to legs)
+    ctx.fillStyle = p.skin;
+    if (throwing) {
+      const windUp = p.throwTimer > 10;
+      ctx.fillRect(-5, 0 - stride, 2, 2);
+      ctx.fillRect(4, windUp ? -4 : 0, 2, 2);
+      if (windUp) {
+        ctx.fillStyle = '#777';
+        ctx.fillRect(5, -5, 3, 3);
+      }
+    } else {
+      ctx.fillRect(-5, 0 - stride, 2, 2);
+      ctx.fillRect(4, 0 + stride, 2, 2);
+    }
+
+    // Head (round, on top of shoulders)
+    ctx.fillStyle = p.skin;
+    ctx.fillRect(-2, -6, 5, 4);
+    ctx.fillRect(-3, -5, 7, 2);
+
+    // Hair (top of head)
+    ctx.fillStyle = p.hairColour;
+    ctx.fillRect(-2, -7, 5, 2);
+    ctx.fillRect(-3, -6, 7, 1);
   }
+
+  ctx.restore();
 
   // Chips in hand + thought bubble
   if (p.hasChips && !p.hit) {
