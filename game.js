@@ -1917,7 +1917,10 @@ function render() {
 
   // Player sprite — rotate around centre
   const activeSprites = getActiveSprites();
-  const sprite = player.flapPhase ? activeSprites.flap : activeSprites.glide;
+  // Always glide during dive; otherwise use flap cycle
+  const sprite = player.diving
+    ? activeSprites.glide
+    : (player.flapPhase ? activeSprites.flap : activeSprites.glide);
 
   // Gentle hover bob when idle
   const bobY = player.moving ? 0 : Math.round(Math.sin(frame * 0.05));
@@ -1925,6 +1928,25 @@ function render() {
   ctx.save();
   ctx.translate(cx, cy + bobY);
   ctx.rotate(player.angle);
+
+  if (player.diving && !player.diveRising) {
+    // Wing tuck: ease in over first 8 frames of dive
+    const t = Math.min(1, player.diveTimer / 8);
+    ctx.scale(1 + t * 0.12, 1 - t * 0.35);
+    // Speed lines behind the bird (in sprite-local space)
+    ctx.strokeStyle = `rgba(255,255,255,${0.3 + t * 0.45})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-14, -5); ctx.lineTo(-14 - 8 * t, -5);
+    ctx.moveTo(-12,  0); ctx.lineTo(-12 - 10 * t, 0);
+    ctx.moveTo(-14,  5); ctx.lineTo(-14 - 8 * t,  5);
+    ctx.stroke();
+  } else if (player.diving && player.diveRising) {
+    // Rising: smoothly un-tuck wings
+    const t = Math.max(0, 1 - player.diveTimer / 30);
+    ctx.scale(1 + t * 0.12, 1 - t * 0.35);
+  }
+
   ctx.drawImage(sprite, -SPRITE_W / 2, -TILE / 2);
   // Chips in mouth (at beak, which points right in sprite space)
   if (player.hasChipsInMouth) {
