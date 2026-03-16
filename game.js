@@ -1024,8 +1024,8 @@ function updateCars() {
     if (car.x > WORLD_W + 20) car.x = -20;
     if (car.x < -20) car.x = WORLD_W + 20;
   }
-  // Car = instakill
-  if (!player.falling && !player.dead) {
+  // Car = instakill (only when diving)
+  if (!player.falling && !player.dead && player.diving) {
     const gx = player.x + SPRITE_W / 2;
     const gy = player.y + TILE / 2;
     for (const car of cars) {
