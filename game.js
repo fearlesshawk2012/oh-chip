@@ -501,8 +501,8 @@ function drawPerson(p) {
     ctx.globalAlpha = 1;
   }
 
-  // Rock pile next to standing/walking people
-  if (!p.sitting && !p.panicking && !p.drowned) {
+  // Rock pile next to standing/walking people (not for kite/drone pilots)
+  if (!p.sitting && !p.panicking && !p.drowned && !p.hasKite && !p.hasDrone) {
     const rx = Math.round(p.x);
     const ry = Math.round(p.y);
     ctx.fillStyle = '#777';
@@ -671,11 +671,20 @@ function drawPeople() {
       // Kite string from person up into the sky
       const kx = px + Math.sin(p.kiteAngle) * 20;
       const ky = 30 + Math.sin(p.kiteAngle * 0.7) * 10;
-      // String
+      const py = Math.round(p.y);
+      // Raised arm holding spool
+      ctx.fillStyle = p.skin;
+      ctx.fillRect(px + 3, py - 9, 2, 6);
+      // Spool / handle in hand
+      ctx.fillStyle = '#7a4a1a';
+      ctx.fillRect(px + 2, py - 10, 4, 3);
+      ctx.fillStyle = '#5a3010';
+      ctx.fillRect(px + 3, py - 9, 2, 1);
+      // String from spool to kite
       ctx.strokeStyle = '#888';
       ctx.lineWidth = 0.5;
       ctx.beginPath();
-      ctx.moveTo(px, p.y - 4);
+      ctx.moveTo(px + 4, py - 10);
       ctx.lineTo(kx, ky);
       ctx.stroke();
       // Kite diamond shape
@@ -704,6 +713,21 @@ function drawPeople() {
     }
 
     if (p.hasDrone && !p.hit) {
+      // Remote controller in pilot's hands
+      const rpy = Math.round(p.y);
+      ctx.fillStyle = '#111';
+      ctx.fillRect(px + 2, rpy - 5, 7, 4);
+      ctx.fillStyle = '#333';
+      ctx.fillRect(px + 3, rpy - 4, 5, 2);
+      // Antenna
+      ctx.fillStyle = '#666';
+      ctx.fillRect(px + 4, rpy - 8, 1, 3);
+      ctx.fillRect(px + 7, rpy - 7, 1, 2);
+      // Buttons
+      ctx.fillStyle = '#e03030';
+      ctx.fillRect(px + 3, rpy - 3, 1, 1);
+      ctx.fillStyle = '#3090e0';
+      ctx.fillRect(px + 6, rpy - 3, 1, 1);
       // Drone hovers above the person in a figure-8 pattern
       const dx = px + Math.sin(p.droneOffset) * 25;
       const dy = 50 + Math.cos(p.droneOffset * 0.5) * 15;
@@ -796,7 +820,6 @@ function updatePeople() {
         if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
           player.hits += 2;
           player.spinTimer = 50;
-          p.hit = true;
           p.hitTimer = 120;
           speak('My kite!', p.voicePitch, p.voiceRate);
           squawk();
@@ -813,7 +836,6 @@ function updatePeople() {
         if (Math.abs(dx) < 8 && Math.abs(dy) < 8) {
           player.hits += 1;
           player.spinTimer = 40;
-          p.hit = true;
           p.hitTimer = 120;
           speak('My drone!', p.voicePitch, p.voiceRate);
           squawk();
