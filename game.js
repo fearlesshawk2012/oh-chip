@@ -1949,9 +1949,9 @@ function drawTitle() {
   ctx.textAlign = 'center';
   ctx.fillStyle = '#1a1a1a';
   ctx.font = 'bold 18px monospace';
-  ctx.fillText('OH CHIP', W / 2 + 1, 91);
+  ctx.fillText('OH CHIP!', W / 2 + 1, 91);
   ctx.fillStyle = '#fff';
-  ctx.fillText('OH CHIP', W / 2, 90);
+  ctx.fillText('OH CHIP!', W / 2, 90);
 
   // Subtitle
   ctx.font = '5px monospace';
