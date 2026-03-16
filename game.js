@@ -1893,12 +1893,32 @@ canvas.addEventListener('click', e => {
     return;
   }
 
+  if (gameState === 'levelselect') {
+    const cx = W / 2;
+    // Back button
+    if (mx >= cx - 25 && mx <= cx + 25 && my >= H - 22 && my <= H - 8) {
+      gameState = 'title';
+      return;
+    }
+    // Level cards
+    const cardW = 50, cardH = 70, gap = 6;
+    const startX = (W - (5 * cardW + 4 * gap)) / 2;
+    const cardY = 90;
+    for (let i = 0; i < 5; i++) {
+      const cx2 = startX + i * (cardW + gap);
+      if (i === 0 && mx >= cx2 && mx <= cx2 + cardW && my >= cardY && my <= cardY + cardH) {
+        gameState = 'playing';
+        restart();
+      }
+    }
+    return;
+  }
+
   if (gameState === 'title') {
     for (const btn of titleButtons) {
       if (mx >= btn.x && mx <= btn.x + btn.w && my >= btn.y && my <= btn.y + btn.h) {
         if (btn.label === 'PLAY') {
-          gameState = 'playing';
-          restart();
+          gameState = 'levelselect';
         } else if (btn.label === 'TUTORIAL') {
           gameState = 'tutorial';
           tutorialPage = 0;
@@ -2329,11 +2349,122 @@ function drawShop() {
   ctx.restore();
 }
 
+const LEVEL_NAMES = ['THE BEACH', '???', '???', '???', '???'];
+
+function drawLevelSelect() {
+  ctx.save();
+  ctx.scale(SCALE, SCALE);
+
+  // Same sunset sky as title
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#6ec6ff');
+  grad.addColorStop(0.5, '#ffe8a0');
+  grad.addColorStop(1, '#ff9966');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Animated sea at bottom
+  ctx.fillStyle = '#1a6ea8';
+  ctx.fillRect(0, H - 50, W, 50);
+  for (let x = 0; x < W; x += 4) {
+    const waveY = H - 50 + Math.sin((x + titleWave) * 0.08) * 3;
+    ctx.fillStyle = '#2188cc';
+    ctx.fillRect(x, waveY, 4, 2);
+  }
+
+  // Heading
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#1a1a1a';
+  ctx.font = 'bold 10px monospace';
+  ctx.fillText('SELECT LEVEL', W / 2 + 1, 56);
+  ctx.fillStyle = '#fff';
+  ctx.fillText('SELECT LEVEL', W / 2, 55);
+
+  // Level cards
+  const cardW = 50, cardH = 70, gap = 6;
+  const startX = (W - (5 * cardW + 4 * gap)) / 2;
+  const cardY = 70;
+
+  for (let i = 0; i < 5; i++) {
+    const cx = startX + i * (cardW + gap);
+    const unlocked = i === 0;
+
+    // Card shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.fillRect(cx + 2, cardY + 2, cardW, cardH);
+
+    // Card background
+    ctx.fillStyle = unlocked ? '#2a4a7a' : '#3a3a4a';
+    ctx.fillRect(cx, cardY, cardW, cardH);
+
+    // Card border
+    ctx.strokeStyle = unlocked ? '#88ccff' : '#555';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(cx + 0.5, cardY + 0.5, cardW - 1, cardH - 1);
+
+    // Level number
+    ctx.fillStyle = unlocked ? '#fff' : '#777';
+    ctx.font = 'bold 16px monospace';
+    ctx.fillText(i + 1, cx + cardW / 2, cardY + 22);
+
+    // Divider
+    ctx.fillStyle = unlocked ? '#4a7abf' : '#444';
+    ctx.fillRect(cx + 4, cardY + 27, cardW - 8, 1);
+
+    if (unlocked) {
+      // Level name
+      ctx.fillStyle = '#ffe8a0';
+      ctx.font = '5px monospace';
+      ctx.fillText(LEVEL_NAMES[i], cx + cardW / 2, cardY + 40);
+      // Small wave icon
+      ctx.fillStyle = '#2188cc';
+      ctx.fillRect(cx + 8,  cardY + 47, cardW - 16, 3);
+      ctx.fillStyle = '#1a6ea8';
+      for (let wx = cx + 8; wx < cx + cardW - 8; wx += 4) {
+        const wy = cardY + 46 + Math.sin((wx + titleWave) * 0.2) * 1.5;
+        ctx.fillRect(wx, wy, 3, 2);
+      }
+      // PLAY label
+      ctx.fillStyle = '#e03030';
+      ctx.fillRect(cx + 8, cardY + 55, cardW - 16, 10);
+      ctx.fillStyle = '#fff';
+      ctx.font = '5px monospace';
+      ctx.fillText('PLAY', cx + cardW / 2, cardY + 62);
+    } else {
+      // Lock icon
+      ctx.fillStyle = '#666';
+      ctx.fillRect(cx + cardW / 2 - 5, cardY + 38, 10, 8);
+      ctx.fillStyle = '#555';
+      ctx.beginPath();
+      ctx.arc(cx + cardW / 2, cardY + 38, 5, Math.PI, 0);
+      ctx.fill();
+      ctx.fillStyle = '#888';
+      ctx.font = '5px monospace';
+      ctx.fillText('LOCKED', cx + cardW / 2, cardY + 62);
+    }
+  }
+
+  // Back button
+  ctx.fillStyle = '#3a3a6a';
+  ctx.fillRect(W / 2 - 25, H - 22, 50, 14);
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 0.5;
+  ctx.strokeRect(W / 2 - 25, H - 22, 50, 14);
+  ctx.fillStyle = '#fff';
+  ctx.font = '6px monospace';
+  ctx.fillText('BACK', W / 2, H - 12);
+
+  ctx.textAlign = 'left';
+  ctx.restore();
+}
+
 function loop() {
   frame++;
   titleWave++;
   if (gameState === 'title') {
     drawTitle();
+  } else if (gameState === 'levelselect') {
+    drawLevelSelect();
   } else if (gameState === 'tutorial') {
     drawTutorial();
   } else if (gameState === 'shop') {
