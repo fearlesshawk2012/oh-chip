@@ -14,6 +14,14 @@ const SEA_END    = 160;   // sea fills 0–159
 const BEACH_END  = 200;   // beach fills 160–199
                           // street fills 200–239
 
+// City level (level 2) zone boundaries
+const CITY_SKY_BOTTOM      = 65;   // rooftops 0–64
+const CITY_UPPER_SW_BOTTOM = 95;   // upper sidewalk 65–94
+const CITY_ROAD_TOP        = 95;   // road 95–164
+const CITY_ROAD_BOTTOM     = 165;
+const CITY_LOWER_SW_BOTTOM = 200;  // lower sidewalk 165–199
+                                   // lower buildings 200–239
+
 // Camera (horizontal scroll only)
 const camera = { x: 0 };
 
@@ -284,6 +292,91 @@ function drawStreet() {
 }
 
 // ============================================================
+// CITY BACKGROUND (level 2)
+// ============================================================
+function drawCity() {
+  const vl = camera.x;
+  const vr = camera.x + W;
+
+  // Overcast sky
+  ctx.fillStyle = '#6a7a9a';
+  ctx.fillRect(vl, 0, W, CITY_SKY_BOTTOM);
+
+  // Upper buildings
+  for (let bx = Math.floor(vl / 36) * 36; bx < vr; bx += 36) {
+    const bi = Math.abs(Math.floor(bx / 36));
+    const bh = 20 + (bi * 17 + 7) % 40;
+    const bColors = ['#4a5a7a', '#5a4a6a', '#3a5060', '#6a5a3a'];
+    ctx.fillStyle = bColors[bi % 4];
+    ctx.fillRect(bx, CITY_SKY_BOTTOM - bh, 34, bh);
+    // Lit windows
+    for (let wy = CITY_SKY_BOTTOM - bh + 4; wy < CITY_SKY_BOTTOM - 3; wy += 8) {
+      for (let wx2 = bx + 3; wx2 < bx + 31; wx2 += 7) {
+        ctx.fillStyle = (bi + Math.floor((wy + bh) / 8)) % 3 !== 0 ? '#ffe880' : '#2a2a2a';
+        ctx.fillRect(wx2, wy, 3, 4);
+      }
+    }
+    ctx.fillStyle = '#2a2a3a';
+    ctx.fillRect(bx, CITY_SKY_BOTTOM - bh, 34, 2);
+  }
+
+  // Upper sidewalk
+  ctx.fillStyle = '#aaa898';
+  ctx.fillRect(vl, CITY_SKY_BOTTOM, W, CITY_UPPER_SW_BOTTOM - CITY_SKY_BOTTOM);
+  ctx.fillStyle = '#908e80';
+  for (let tx = Math.floor(vl / 20) * 20; tx < vr; tx += 20) {
+    ctx.fillRect(tx, CITY_SKY_BOTTOM, 1, CITY_UPPER_SW_BOTTOM - CITY_SKY_BOTTOM);
+  }
+  ctx.fillRect(vl, CITY_SKY_BOTTOM + Math.floor((CITY_UPPER_SW_BOTTOM - CITY_SKY_BOTTOM) / 2), W, 1);
+
+  // Road (asphalt)
+  ctx.fillStyle = '#484848';
+  ctx.fillRect(vl, CITY_ROAD_TOP, W, CITY_ROAD_BOTTOM - CITY_ROAD_TOP);
+  ctx.fillStyle = '#404040';
+  for (let tx = Math.floor(vl / 32) * 32; tx < vr; tx += 32) {
+    ctx.fillRect(tx, CITY_ROAD_TOP, 16, CITY_ROAD_BOTTOM - CITY_ROAD_TOP);
+  }
+  // Lane dividers (dashed white)
+  ctx.fillStyle = '#d8d8d8';
+  for (let tx = Math.floor(vl / 20) * 20; tx < vr; tx += 20) {
+    ctx.fillRect(tx, CITY_ROAD_TOP + 23, 12, 2);
+    ctx.fillRect(tx, CITY_ROAD_BOTTOM - 25, 12, 2);
+  }
+  // Yellow centre line
+  ctx.fillStyle = '#f0e020';
+  const roadCY = Math.floor((CITY_ROAD_TOP + CITY_ROAD_BOTTOM) / 2);
+  for (let tx = Math.floor(vl / 20) * 20; tx < vr; tx += 20) {
+    ctx.fillRect(tx, roadCY - 1, 12, 2);
+  }
+
+  // Lower sidewalk
+  ctx.fillStyle = '#aaa898';
+  ctx.fillRect(vl, CITY_ROAD_BOTTOM, W, CITY_LOWER_SW_BOTTOM - CITY_ROAD_BOTTOM);
+  ctx.fillStyle = '#908e80';
+  for (let tx = Math.floor(vl / 20) * 20; tx < vr; tx += 20) {
+    ctx.fillRect(tx, CITY_ROAD_BOTTOM, 1, CITY_LOWER_SW_BOTTOM - CITY_ROAD_BOTTOM);
+  }
+  ctx.fillRect(vl, CITY_ROAD_BOTTOM + Math.floor((CITY_LOWER_SW_BOTTOM - CITY_ROAD_BOTTOM) / 2), W, 1);
+
+  // Lower buildings
+  for (let bx = Math.floor(vl / 36) * 36; bx < vr; bx += 36) {
+    const bi = Math.abs(Math.floor(bx / 36)) + 50;
+    const bh = 18 + (bi * 13 + 5) % 35;
+    const bColors = ['#4a6a4a', '#6a4a4a', '#4a4a6a', '#5a5a3a'];
+    ctx.fillStyle = bColors[bi % 4];
+    ctx.fillRect(bx, CITY_LOWER_SW_BOTTOM, 34, bh);
+    for (let wy = CITY_LOWER_SW_BOTTOM + 4; wy < CITY_LOWER_SW_BOTTOM + bh - 3; wy += 8) {
+      for (let wx2 = bx + 3; wx2 < bx + 31; wx2 += 7) {
+        ctx.fillStyle = (bi + Math.floor((wy - CITY_LOWER_SW_BOTTOM) / 8)) % 3 !== 0 ? '#ffe880' : '#2a2a2a';
+        ctx.fillRect(wx2, wy, 3, 4);
+      }
+    }
+    ctx.fillStyle = '#2a2a3a';
+    ctx.fillRect(bx, CITY_LOWER_SW_BOTTOM, 34, 2);
+  }
+}
+
+// ============================================================
 // SOUND
 // ============================================================
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -501,8 +594,8 @@ function drawPerson(p) {
     ctx.globalAlpha = 1;
   }
 
-  // Rock pile next to standing/walking people (not for kite/drone pilots)
-  if (!p.sitting && !p.panicking && !p.drowned && !p.hasKite && !p.hasDrone) {
+  // Rock pile next to standing/walking people (beach only)
+  if (currentLevel === 1 && !p.sitting && !p.panicking && !p.drowned && !p.hasKite && !p.hasDrone) {
     const rx = Math.round(p.x);
     const ry = Math.round(p.y);
     ctx.fillStyle = '#777';
@@ -853,6 +946,156 @@ function updatePeople() {
 }
 
 // ============================================================
+// CITY HAZARDS (level 2) — cars & trash
+// ============================================================
+const cars  = [];
+const trash = [];
+
+const CAR_LANE_Y  = [CITY_ROAD_TOP + 12, CITY_ROAD_TOP + 35, CITY_ROAD_TOP + 58];
+const CAR_LANE_DIR = [1, -1, 1];  // right, left, right
+const CAR_COLORS  = ['#e03030', '#3050e0', '#30a040', '#e0c030', '#e07020', '#a030c0', '#30c0c0'];
+
+function spawnCars() {
+  cars.length = 0;
+  for (let lane = 0; lane < 3; lane++) {
+    const count = 5 + Math.floor((lane * 3 + 7) % 4);
+    for (let i = 0; i < count; i++) {
+      cars.push({
+        x: (i * 211 + lane * 137) % WORLD_W,
+        y: CAR_LANE_Y[lane],
+        speed: CAR_LANE_DIR[lane] * (0.9 + (i * 31 + lane * 17) % 100 / 80),
+        color: CAR_COLORS[(i + lane * 3) % CAR_COLORS.length],
+      });
+    }
+  }
+}
+
+function spawnTrash() {
+  trash.length = 0;
+  const trashZones = [
+    { yMin: CITY_SKY_BOTTOM + 4,    yMax: CITY_UPPER_SW_BOTTOM - 4 },
+    { yMin: CITY_ROAD_BOTTOM + 4,   yMax: CITY_LOWER_SW_BOTTOM - 4 },
+    { yMin: CITY_ROAD_TOP + 2,      yMax: CITY_ROAD_TOP + 14 },
+    { yMin: CITY_ROAD_BOTTOM - 14,  yMax: CITY_ROAD_BOTTOM - 2 },
+  ];
+  for (let i = 0; i < 30; i++) {
+    const z = trashZones[(i * 7) % trashZones.length];
+    trash.push({
+      x: 20 + (i * 193 + 57) % (WORLD_W - 40),
+      y: z.yMin + (i * 31) % (z.yMax - z.yMin),
+    });
+  }
+}
+
+function spawnCityPeople() {
+  for (let i = 0; i < 12; i++) {
+    const dir = i % 2 === 0 ? 1 : -1;
+    people.push({
+      x: (i * 197 + 40) % WORLD_W,
+      y: CITY_SKY_BOTTOM + 8 + (i * 41) % (CITY_UPPER_SW_BOTTOM - CITY_SKY_BOTTOM - 12),
+      shirt: SHIRT_COLOURS[(i + 1) % SHIRT_COLOURS.length],
+      skin:  SKIN_TONES[i % SKIN_TONES.length],
+      zone: 'city', sitting: false, hit: false, hitTimer: 0,
+      hairColour: HAIR_COLOURS[i % HAIR_COLOURS.length],
+      voicePitch: 0.7 + (i * 31 % 100) / 100 * 1.0,
+      voiceRate:  0.9 + (i * 47 % 100) / 100 * 0.4,
+      walkSpeed: dir * (0.04 + (i * 23 % 100) / 100 * 0.08),
+    });
+  }
+  for (let i = 0; i < 12; i++) {
+    const dir = i % 2 === 0 ? -1 : 1;
+    people.push({
+      x: (i * 211 + 100) % WORLD_W,
+      y: CITY_ROAD_BOTTOM + 5 + (i * 53) % (CITY_LOWER_SW_BOTTOM - CITY_ROAD_BOTTOM - 10),
+      shirt: SHIRT_COLOURS[(i + 5) % SHIRT_COLOURS.length],
+      skin:  SKIN_TONES[(i + 2) % SKIN_TONES.length],
+      zone: 'city', sitting: false, hit: false, hitTimer: 0,
+      hairColour: HAIR_COLOURS[(i + 3) % HAIR_COLOURS.length],
+      voicePitch: 0.7 + ((i + 6) * 31 % 100) / 100 * 1.0,
+      voiceRate:  0.9 + ((i + 6) * 47 % 100) / 100 * 0.4,
+      walkSpeed: dir * (0.04 + (i * 23 % 100) / 100 * 0.08),
+    });
+  }
+}
+
+function updateCars() {
+  for (const car of cars) {
+    car.x += car.speed;
+    if (car.x > WORLD_W + 20) car.x = -20;
+    if (car.x < -20) car.x = WORLD_W + 20;
+  }
+  // Car = instakill
+  if (!player.falling && !player.dead) {
+    const gx = player.x + SPRITE_W / 2;
+    const gy = player.y + TILE / 2;
+    for (const car of cars) {
+      if (Math.abs(gx - (car.x + 11)) < 15 && Math.abs(gy - car.y) < 9) {
+        player.hits = 3;
+        player.falling = true;
+        player.fallVy = 0;
+        squawk();
+        break;
+      }
+    }
+  }
+}
+
+function updateTrash() {
+  if (player.falling || player.dead || player.spinTimer > 0) return;
+  const gx = player.x + SPRITE_W / 2;
+  const gy = player.y + TILE / 2;
+  for (let i = trash.length - 1; i >= 0; i--) {
+    const t = trash[i];
+    if (Math.abs(gx - t.x) < 8 && Math.abs(gy - t.y) < 8) {
+      player.hits++;
+      player.spinTimer = 40;
+      squawk();
+      trash.splice(i, 1);
+      if (player.hits >= 3) { player.falling = true; player.fallVy = 0; }
+      break;
+    }
+  }
+}
+
+function drawCars() {
+  for (const car of cars) {
+    if (car.x + 25 < camera.x || car.x > camera.x + W) continue;
+    const x = car.x;
+    const cy = car.y;
+    // Body
+    ctx.fillStyle = car.color;
+    ctx.fillRect(x, cy - 6, 22, 12);
+    // Roof panel
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
+    ctx.fillRect(x + 5, cy - 5, 12, 10);
+    // Windshields
+    ctx.fillStyle = '#a8d4f0';
+    ctx.fillRect(x + 2,  cy - 5, 3, 10);
+    ctx.fillRect(x + 17, cy - 5, 3, 10);
+    // Wheels
+    ctx.fillStyle = '#111';
+    ctx.fillRect(x - 1,  cy - 7, 3, 3);
+    ctx.fillRect(x + 20, cy - 7, 3, 3);
+    ctx.fillRect(x - 1,  cy + 4, 3, 3);
+    ctx.fillRect(x + 20, cy + 4, 3, 3);
+  }
+}
+
+function drawTrash() {
+  for (const t of trash) {
+    if (t.x + 6 < camera.x || t.x - 6 > camera.x + W) continue;
+    // Garbage bag
+    ctx.fillStyle = '#2a5a20';
+    ctx.fillRect(t.x - 3, t.y - 3, 6, 5);
+    ctx.fillStyle = '#1a3a15';
+    ctx.fillRect(t.x - 2, t.y - 2, 4, 3);
+    // Tie
+    ctx.fillStyle = '#888';
+    ctx.fillRect(t.x - 1, t.y - 4, 2, 1);
+  }
+}
+
+// ============================================================
 // POOP SYSTEM
 // ============================================================
 const poops = [];   // active falling poops
@@ -1075,6 +1318,7 @@ function drawStones() {
 
 // People throw stones at nearby seagulls (player + NPCs)
 function maybeThrowStones() {
+  if (currentLevel !== 1) return;
   // Build list of all targetable gulls
   const targets = [];
   if (!player.falling && !player.dead) {
@@ -1371,7 +1615,8 @@ function handleInput() {
 let frame = 0;
 let score = 0;
 let wallet = 0;
-let gameState = 'title'; // 'title', 'playing', 'tutorial', or 'shop'
+let gameState = 'title'; // 'title', 'playing', 'tutorial', 'shop', or 'levelselect'
+let currentLevel = 1;
 let tutorialPage = 0;
 let activeSkin = 'default';
 const ownedSkins = { default: true };
@@ -1607,6 +1852,11 @@ function update() {
   updatePoops();
   updateStones();
   maybeThrowStones();
+  // City hazards
+  if (currentLevel === 2) {
+    updateCars();
+    updateTrash();
+  }
   if (poopCooldown > 0) poopCooldown--;
   if (player.chipMouthTimer > 0) {
     player.chipMouthTimer--;
@@ -1629,11 +1879,15 @@ function render() {
   ctx.translate(-camera.x, 0);
 
   // Background
-  drawSea(waveOffset);
-  drawBeach();
-  drawStreet();
+  if (currentLevel === 2) {
+    drawCity();
+  } else {
+    drawSea(waveOffset);
+    drawBeach();
+    drawStreet();
+  }
 
-  // People on beach & promenade
+  // People
   drawPeople();
 
   // NPC seagulls
@@ -1642,8 +1896,14 @@ function render() {
   // Poop splats & falling droppings
   drawPoops();
 
-  // Stones
-  drawStones();
+  // Stones (level 1 only)
+  if (currentLevel === 1) drawStones();
+
+  // City hazards (level 2 only)
+  if (currentLevel === 2) {
+    drawTrash();
+    drawCars();
+  }
 
   // Centre of the sprite in world space
   const cx = Math.round(player.x + SPRITE_W / 2);
@@ -1820,9 +2080,17 @@ function restart() {
   poops.length = 0;
   splats.length = 0;
   stones.length = 0;
-  // Reset people
+  cars.length = 0;
+  trash.length = 0;
+  // Reset people and level-specific content
   people.length = 0;
-  spawnPeople();
+  if (currentLevel === 2) {
+    spawnCars();
+    spawnTrash();
+    spawnCityPeople();
+  } else {
+    spawnPeople();
+  }
   // Reset NPC gulls
   for (const npc of npcGulls) {
     npc.hits = 0;
@@ -1906,7 +2174,8 @@ canvas.addEventListener('click', e => {
     const cardY = 90;
     for (let i = 0; i < 5; i++) {
       const cx2 = startX + i * (cardW + gap);
-      if (i === 0 && mx >= cx2 && mx <= cx2 + cardW && my >= cardY && my <= cardY + cardH) {
+      if (i <= 1 && mx >= cx2 && mx <= cx2 + cardW && my >= cardY && my <= cardY + cardH) {
+        currentLevel = i + 1;
         gameState = 'playing';
         restart();
       }
@@ -2349,7 +2618,7 @@ function drawShop() {
   ctx.restore();
 }
 
-const LEVEL_NAMES = ['THE BEACH', '???', '???', '???', '???'];
+const LEVEL_NAMES = ['THE BEACH', 'THE CITY', '???', '???', '???'];
 
 function drawLevelSelect() {
   ctx.save();
@@ -2387,7 +2656,7 @@ function drawLevelSelect() {
 
   for (let i = 0; i < 5; i++) {
     const cx = startX + i * (cardW + gap);
-    const unlocked = i === 0;
+    const unlocked = i <= 1;
 
     // Card shadow
     ctx.fillStyle = 'rgba(0,0,0,0.25)';
@@ -2416,13 +2685,27 @@ function drawLevelSelect() {
       ctx.fillStyle = '#ffe8a0';
       ctx.font = '5px monospace';
       ctx.fillText(LEVEL_NAMES[i], cx + cardW / 2, cardY + 40);
-      // Small wave icon
-      ctx.fillStyle = '#2188cc';
-      ctx.fillRect(cx + 8,  cardY + 47, cardW - 16, 3);
-      ctx.fillStyle = '#1a6ea8';
-      for (let wx = cx + 8; wx < cx + cardW - 8; wx += 4) {
-        const wy = cardY + 46 + Math.sin((wx + titleWave) * 0.2) * 1.5;
-        ctx.fillRect(wx, wy, 3, 2);
+      // Level icon
+      if (i === 0) {
+        // Wave icon for beach
+        ctx.fillStyle = '#2188cc';
+        ctx.fillRect(cx + 8, cardY + 47, cardW - 16, 3);
+        ctx.fillStyle = '#1a6ea8';
+        for (let wx = cx + 8; wx < cx + cardW - 8; wx += 4) {
+          const wy = cardY + 46 + Math.sin((wx + titleWave) * 0.2) * 1.5;
+          ctx.fillRect(wx, wy, 3, 2);
+        }
+      } else {
+        // Road icon for city
+        ctx.fillStyle = '#484848';
+        ctx.fillRect(cx + 6, cardY + 44, cardW - 12, 12);
+        ctx.fillStyle = '#f0e020';
+        for (let rx = cx + 8; rx < cx + cardW - 10; rx += 6) {
+          ctx.fillRect(rx, cardY + 49, 4, 2);
+        }
+        // Small car
+        ctx.fillStyle = '#e03030';
+        ctx.fillRect(cx + 10, cardY + 46, 10, 5);
       }
       // PLAY label
       ctx.fillStyle = '#e03030';
