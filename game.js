@@ -2696,16 +2696,40 @@ function drawLevelSelect() {
           ctx.fillRect(wx, wy, 3, 2);
         }
       } else {
-        // Road icon for city
+        // Road icon for city — animated cars
+        const roadX = cx + 6;
+        const roadW = cardW - 12;
+        const roadY = cardY + 44;
+        const roadH = 12;
+        // Clip to road area
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(roadX, roadY, roadW, roadH);
+        ctx.clip();
+        // Road surface
         ctx.fillStyle = '#484848';
-        ctx.fillRect(cx + 6, cardY + 44, cardW - 12, 12);
+        ctx.fillRect(roadX, roadY, roadW, roadH);
+        // Scrolling dashed centre line
+        const dashOffset = (titleWave * 0.4) % 8;
         ctx.fillStyle = '#f0e020';
-        for (let rx = cx + 8; rx < cx + cardW - 10; rx += 6) {
-          ctx.fillRect(rx, cardY + 49, 4, 2);
+        for (let rx = roadX - 8 + dashOffset; rx < roadX + roadW + 8; rx += 8) {
+          ctx.fillRect(rx, roadY + 5, 5, 2);
         }
-        // Small car
+        // Car going right (top lane)
+        const car1X = roadX + ((titleWave * 0.6) % (roadW + 14)) - 12;
         ctx.fillStyle = '#e03030';
-        ctx.fillRect(cx + 10, cardY + 46, 10, 5);
+        ctx.fillRect(car1X, roadY + 1, 10, 4);
+        ctx.fillStyle = '#a8d4f0';
+        ctx.fillRect(car1X + 1, roadY + 1, 2, 4);
+        ctx.fillRect(car1X + 7, roadY + 1, 2, 4);
+        // Car going left (bottom lane)
+        const car2X = roadX + roadW - ((titleWave * 0.9) % (roadW + 14)) + 2;
+        ctx.fillStyle = '#3050e0';
+        ctx.fillRect(car2X, roadY + 7, 10, 4);
+        ctx.fillStyle = '#a8d4f0';
+        ctx.fillRect(car2X + 1, roadY + 7, 2, 4);
+        ctx.fillRect(car2X + 7, roadY + 7, 2, 4);
+        ctx.restore();
       }
       // PLAY label
       ctx.fillStyle = '#e03030';
