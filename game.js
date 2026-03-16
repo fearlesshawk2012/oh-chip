@@ -668,23 +668,24 @@ function drawPeople() {
     const px = p.x - camera.x;
 
     if (p.hasKite && !p.hit) {
-      // Kite string from person up into the sky
-      const kx = px + Math.sin(p.kiteAngle) * 20;
+      // Use world-x so drawing matches the collision hitbox as camera scrolls
+      const wx = p.x;
+      const kx = wx + Math.sin(p.kiteAngle) * 20;
       const ky = 30 + Math.sin(p.kiteAngle * 0.7) * 10;
-      const py = Math.round(p.y);
-      // Raised arm holding spool
+      const wy = Math.round(p.y);
+      // Person: raised arm holding spool
       ctx.fillStyle = p.skin;
-      ctx.fillRect(px + 3, py - 9, 2, 6);
+      ctx.fillRect(wx + 3, wy - 9, 2, 6);
       // Spool / handle in hand
       ctx.fillStyle = '#7a4a1a';
-      ctx.fillRect(px + 2, py - 10, 4, 3);
+      ctx.fillRect(wx + 2, wy - 10, 4, 3);
       ctx.fillStyle = '#5a3010';
-      ctx.fillRect(px + 3, py - 9, 2, 1);
+      ctx.fillRect(wx + 3, wy - 9, 2, 1);
       // String from spool to kite
       ctx.strokeStyle = '#888';
       ctx.lineWidth = 0.5;
       ctx.beginPath();
-      ctx.moveTo(px + 4, py - 10);
+      ctx.moveTo(wx + 4, wy - 10);
       ctx.lineTo(kx, ky);
       ctx.stroke();
       // Kite diamond shape
@@ -707,29 +708,31 @@ function drawPeople() {
       ctx.lineTo(kx - 3, ky + 12 + Math.sin(p.kiteAngle * 2) * 2);
       ctx.lineTo(kx + 1, ky + 16 + Math.sin(p.kiteAngle * 2 + 1) * 2);
       ctx.stroke();
-      // Store kite position for collision
-      p.kiteX = kx + camera.x;
+      // Store kite world position for collision
+      p.kiteX = kx;
       p.kiteY = ky;
     }
 
     if (p.hasDrone && !p.hit) {
-      // Remote controller in pilot's hands
-      const rpy = Math.round(p.y);
+      // Use world-x so drawing matches the collision hitbox as camera scrolls
+      const wx = p.x;
+      const wy = Math.round(p.y);
+      // Person: remote controller in hands
       ctx.fillStyle = '#111';
-      ctx.fillRect(px + 2, rpy - 5, 7, 4);
+      ctx.fillRect(wx + 2, wy - 5, 7, 4);
       ctx.fillStyle = '#333';
-      ctx.fillRect(px + 3, rpy - 4, 5, 2);
+      ctx.fillRect(wx + 3, wy - 4, 5, 2);
       // Antenna
       ctx.fillStyle = '#666';
-      ctx.fillRect(px + 4, rpy - 8, 1, 3);
-      ctx.fillRect(px + 7, rpy - 7, 1, 2);
+      ctx.fillRect(wx + 4, wy - 8, 1, 3);
+      ctx.fillRect(wx + 7, wy - 7, 1, 2);
       // Buttons
       ctx.fillStyle = '#e03030';
-      ctx.fillRect(px + 3, rpy - 3, 1, 1);
+      ctx.fillRect(wx + 3, wy - 3, 1, 1);
       ctx.fillStyle = '#3090e0';
-      ctx.fillRect(px + 6, rpy - 3, 1, 1);
+      ctx.fillRect(wx + 6, wy - 3, 1, 1);
       // Drone hovers above the person in a figure-8 pattern
-      const dx = px + Math.sin(p.droneOffset) * 25;
+      const dx = wx + Math.sin(p.droneOffset) * 25;
       const dy = 50 + Math.cos(p.droneOffset * 0.5) * 15;
       // Drone body
       ctx.fillStyle = '#2a2a2a';
@@ -751,8 +754,8 @@ function drawPeople() {
       // Red light
       ctx.fillStyle = frame % 30 < 15 ? '#e03030' : '#600';
       ctx.fillRect(dx, dy + 1, 1, 1);
-      // Store drone position for collision
-      p.droneX = dx + camera.x;
+      // Store drone world position for collision
+      p.droneX = dx;
       p.droneY = dy;
     }
   }
